@@ -21,6 +21,11 @@ class TcpSocket
         ssize_t Write(const void* buf, size_t count);
         ssize_t Write(const std::string data);
 
+        std::pair<std::string,int> GetPeerNameAndPort();
+        std::string GetPeerName();
+        int GetPeerPort();
+        std::string GetPeer();
+
     private:
         int _fd = -1;
 };

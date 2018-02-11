@@ -75,6 +75,7 @@ bool TcpServer::ServerSocketEvent(TcpSocket &socket, uint32_t events)
     }
 
     _clientSockets[sock] = clientSocket;
+    OnConnectionEstablished(clientSocket);
     return true;
 }
 
@@ -116,6 +117,23 @@ void TcpServer::RemoveClientSocket(TcpSocket &socket)
     }
 }
 
+void TcpServer::OnConnectionEstablished(TcpSocket &socket)
+{
+    std::vector<ListenerHandle> _toDelete;
+    for (auto& kvp: _connectionEstablishedListeners)
+    {
+        if (!(kvp.second)(socket))
+        {
+            _toDelete.push_back(kvp.first);
+        }
+    }
+
+    for (auto& del: _toDelete)
+    {
+        _connectionEstablishedListeners.erase(del);
+    }
+}
+
 void TcpServer::OnDataReceived(TcpSocket &socket, const void *data, size_t count)
 {
     std::vector<ListenerHandle> _toDelete;
@@ -131,6 +149,11 @@ void TcpServer::OnDataReceived(TcpSocket &socket, const void *data, size_t count
     {
         _dataReceivedListeners.erase(del);
     }
+}
+
+TcpServer::ListenerHandle TcpServer::MakeListenerHandle()
+{
+    return _nextListenerHandle++;
 }
 
 void TcpServer::Broadcast(const void *buf, size_t count)
@@ -149,16 +172,24 @@ void TcpServer::Broadcast(std::string s)
     Broadcast(s.c_str(), s.length());
 }
 
+TcpServer::ListenerHandle TcpServer::AddConnectionEstablishedListener(TcpServer::ConnectionEstablishedCallback listener)
+{
+    ListenerHandle result = MakeListenerHandle();
+    _connectionEstablishedListeners[result] = listener;
+    return result;
+}
+
 TcpServer::ListenerHandle TcpServer::AddDataReceivedListener(TcpServer::DataReceivedCallback listener)
 {
-    ListenerHandle result = _nextListenerHandle++;
+    ListenerHandle result = MakeListenerHandle();
     _dataReceivedListeners[result] = listener;
     return result;
 }
 
-void TcpServer::RemoveListener(TcpServer::ListenerHandle hnd)
+void TcpServer::RemoveListener(TcpServer::ListenerHandle listenerHandle)
 {
-    _dataReceivedListeners.erase(hnd);
+    _connectionEstablishedListeners.erase(listenerHandle);
+    _dataReceivedListeners.erase(listenerHandle);
 }
 
 EPoll &TcpServer::GetEPoll()

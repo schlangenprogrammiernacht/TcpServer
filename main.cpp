@@ -1,10 +1,20 @@
 #include "TcpServer.h"
+#include <iostream>
 
 int main()
 {
     TcpServer server;
 
-    auto listenerHandle = server.AddDataReceivedListener(
+    server.AddConnectionEstablishedListener(
+        [](TcpSocket& socket)
+        {
+            socket.Write("Welcome, " + socket.GetPeerName() + "\n");
+            std::cerr << "connection established to " << socket.GetPeer() << std::endl;
+            return true;
+        }
+    );
+
+    server.AddDataReceivedListener(
         [&server](TcpSocket& socket, const void* data, size_t count)
         {
             socket.Write("Ok\n");
@@ -27,5 +37,4 @@ int main()
         }
     }
 
-    server.RemoveListener(listenerHandle);
 }
