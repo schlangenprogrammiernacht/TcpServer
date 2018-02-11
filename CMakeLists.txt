@@ -5,3 +5,4 @@ set (CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(TcpServer)
 add_subdirectory(BroadcastExample)
+add_subdirectory(MsgPackExample)
