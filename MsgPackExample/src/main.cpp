@@ -4,6 +4,10 @@
 #include <string>
 #include <vector>
 
+static double x = 0;
+static double y = 0;
+
+
 int main()
 {
     TcpServer server;
@@ -15,6 +19,7 @@ int main()
             msgpack::sbuffer sbuf;
             msgpack::pack(sbuf, data);
             socket.Write(sbuf.data(), sbuf.size());
+            x = 0; y = 0;
             std::cerr << "connection established to " << socket.GetPeer() << std::endl;
             return true;
         }
@@ -28,10 +33,15 @@ int main()
         }
     );
 
-    server.AddDataReceivedListener(
-        [&server](TcpSocket& socket, const void* data, size_t count)
+    server.AddDataAvailableListener(
+        [&server](TcpSocket& socket)
         {
-            server.Broadcast(data, count);
+            uint8_t data[1024];
+            ssize_t count = socket.Read(data, sizeof(data));
+            if (count > 0)
+            {
+                server.Broadcast(data, static_cast<size_t>(count));
+            }
             return true;
         }
     );
@@ -43,10 +53,15 @@ int main()
 
     while (true)
     {
-        if (server.Poll(10000) == 0)
+        if (server.Poll(16) == 0)
         {
-            // timeout
-            //server.Broadcast("ping\n");
+            x += 5;
+            y += 2.25;
+
+            std::vector<double> data {{x, y}};
+            msgpack::sbuffer sbuf;
+            msgpack::pack(sbuf, data);
+            server.Broadcast(sbuf.data(), sbuf.size());
         }
     }
 

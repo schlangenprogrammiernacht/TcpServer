@@ -23,11 +23,19 @@ int main()
         }
     );
 
-    server.AddDataReceivedListener(
-        [&server](TcpSocket& socket, const void* data, size_t count)
+    server.AddDataAvailableListener(
+        [&server](TcpSocket& socket)
         {
+            uint8_t data[1024];
+            ssize_t count = socket.Read(data, sizeof(data));
+            if (count < 0)
+            {
+                socket.Close();
+                return false;
+            }
+
             socket.Write("Ok\n");
-            server.Broadcast(data, count);
+            server.Broadcast(data, static_cast<size_t>(count));
             return true;
         }
     );

@@ -7,16 +7,10 @@
 
 TcpServer::TcpServer()
 {
-    SetReceiveBufferSize(DEFAULT_RECEIVE_BUFFER_SIZE);
 }
 
 TcpServer::~TcpServer()
 {
-}
-
-void TcpServer::SetReceiveBufferSize(size_t bufferSize)
-{
-    _receiveBuffer.resize(bufferSize);
 }
 
 bool TcpServer::Listen(uint16_t port)
@@ -94,13 +88,10 @@ void TcpServer::RemoveServerSocket(TcpSocket &socket)
 
 bool TcpServer::ClientSocketEvent(TcpSocket &socket, uint32_t events)
 {
-    ssize_t bytes_read = socket.Read(_receiveBuffer.data(), _receiveBuffer.size());
-    if (bytes_read <= 0)
+    if (events & EPOLLIN)
     {
-        RemoveClientSocket(socket);
-        return false;
+        MakeConnectionCallback(_dataAvailableListeners, socket);
     }
-    OnDataReceived(socket, _receiveBuffer.data(), static_cast<size_t>(bytes_read));
     return true;
 }
 
@@ -131,23 +122,6 @@ void TcpServer::MakeConnectionCallback(std::map<TcpServer::ListenerHandle, TcpSe
     for (auto& del: _toDelete)
     {
         callbackMap.erase(del);
-    }
-}
-
-void TcpServer::OnDataReceived(TcpSocket &socket, const void *data, size_t count)
-{
-    std::vector<ListenerHandle> _toDelete;
-    for (auto& kvp: _dataReceivedListeners)
-    {
-        if (!(kvp.second)(socket, data, count))
-        {
-            _toDelete.push_back(kvp.first);
-        }
-    }
-
-    for (auto& del: _toDelete)
-    {
-        _dataReceivedListeners.erase(del);
     }
 }
 
@@ -186,10 +160,10 @@ TcpServer::ListenerHandle TcpServer::AddConnectionClosedListener(TcpServer::Conn
     return result;
 }
 
-TcpServer::ListenerHandle TcpServer::AddDataReceivedListener(TcpServer::DataReceivedCallback listener)
+TcpServer::ListenerHandle TcpServer::AddDataAvailableListener(TcpServer::ConnectionCallback listener)
 {
     ListenerHandle result = MakeListenerHandle();
-    _dataReceivedListeners[result] = listener;
+    _dataAvailableListeners[result] = listener;
     return result;
 }
 
@@ -197,7 +171,7 @@ void TcpServer::RemoveListener(TcpServer::ListenerHandle listenerHandle)
 {
     _connectionEstablishedListeners.erase(listenerHandle);
     _connectionClosedListeners.equal_range(listenerHandle);
-    _dataReceivedListeners.erase(listenerHandle);
+    _dataAvailableListeners.erase(listenerHandle);
 }
 
 EPoll &TcpServer::GetEPoll()
