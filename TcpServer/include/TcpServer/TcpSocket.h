@@ -8,6 +8,7 @@ class TcpSocket
     public:
         TcpSocket();
         TcpSocket(int fd);
+        TcpSocket(const TcpSocket &other);
         ~TcpSocket();
 
         int GetFileDescriptor() const;

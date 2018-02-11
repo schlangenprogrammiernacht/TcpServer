@@ -61,7 +61,7 @@ bool TcpServer::ServerSocketEvent(TcpSocket &socket, uint32_t events)
     }
 
     _clientSockets[sock] = clientSocket;
-    MakeConnectionCallback(_connectionEstablishedListeners, clientSocket);
+    MakeConnectionCallback(_connectionEstablishedListeners, _clientSockets[sock]);
     return true;
 }
 

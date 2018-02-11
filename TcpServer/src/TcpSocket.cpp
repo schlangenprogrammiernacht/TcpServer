@@ -16,6 +16,12 @@ TcpSocket::TcpSocket(int fd)
 {
 }
 
+TcpSocket::TcpSocket(const TcpSocket &other)
+    : _fd(other._fd)
+    , _userData(other._userData)
+{
+}
+
 TcpSocket::~TcpSocket()
 {
 }

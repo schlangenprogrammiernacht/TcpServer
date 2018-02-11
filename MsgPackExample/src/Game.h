@@ -1,6 +1,10 @@
 #pragma once
 
+#include <vector>
+#include <memory>
+
 #include <TcpServer/TcpServer.h>
+#include "Snake.h"
 
 class Game
 {
@@ -10,8 +14,7 @@ class Game
 
     private:
         TcpServer server;
-        double x = 0;
-        double y = 0;
+        std::vector<std::unique_ptr<Snake>> _snakes;
 
         bool OnConnectionEstablished(TcpSocket& socket);
         bool OnConnectionClosed(TcpSocket& socket);
