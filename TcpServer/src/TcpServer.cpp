@@ -5,14 +5,6 @@
 #include <algorithm>
 #include <iostream>
 
-TcpServer::TcpServer()
-{
-}
-
-TcpServer::~TcpServer()
-{
-}
-
 bool TcpServer::Listen(uint16_t port)
 {
     TcpSocket sock;

@@ -25,8 +25,11 @@ class TcpSocket
         std::string GetPeerName();
         int GetPeerPort();
         std::string GetPeer();
+        void SetUserData(void* userData);
+        void* GetUserData();
 
     private:
         int _fd = -1;
+        void* _userData = nullptr;
 };
 

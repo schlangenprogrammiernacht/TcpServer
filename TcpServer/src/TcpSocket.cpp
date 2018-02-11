@@ -151,3 +151,13 @@ std::string TcpSocket::GetPeer()
     result << "[" << p.first << "]:" << p.second;
     return result.str();
 }
+
+void TcpSocket::SetUserData(void *userData)
+{
+    _userData = userData;
+}
+
+void *TcpSocket::GetUserData()
+{
+    return _userData;
+}

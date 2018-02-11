@@ -18,8 +18,10 @@ class TcpServer
         typedef size_t ListenerHandle;
 
     public:
-        TcpServer();
-        ~TcpServer();
+        TcpServer() = default;
+        TcpServer(const TcpServer& other) = delete;
+        ~TcpServer() = default;
+
         bool Listen(uint16_t port);
         int Poll(int timeout_ms);
         void Broadcast(const void *buf, size_t count);
