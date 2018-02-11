@@ -75,7 +75,7 @@ bool TcpServer::ServerSocketEvent(TcpSocket &socket, uint32_t events)
     }
 
     _clientSockets[sock] = clientSocket;
-    OnConnectionEstablished(clientSocket);
+    MakeConnectionCallback(_connectionEstablishedListeners, clientSocket);
     return true;
 }
 
@@ -110,17 +110,17 @@ void TcpServer::RemoveClientSocket(TcpSocket &socket)
     auto it = _clientSockets.find(fd);
     if (it != _clientSockets.end())
     {
+        MakeConnectionCallback(_connectionClosedListeners, socket);
         socket.Close();
         _epoll.DeleteFileDescriptor(fd);
-        std::cerr << "removing client socket " << fd << std::endl;
         _clientSockets.erase(it);
     }
 }
 
-void TcpServer::OnConnectionEstablished(TcpSocket &socket)
+void TcpServer::MakeConnectionCallback(std::map<TcpServer::ListenerHandle, TcpServer::ConnectionCallback> &callbackMap, TcpSocket &socket)
 {
     std::vector<ListenerHandle> _toDelete;
-    for (auto& kvp: _connectionEstablishedListeners)
+    for (auto& kvp: callbackMap)
     {
         if (!(kvp.second)(socket))
         {
@@ -130,7 +130,7 @@ void TcpServer::OnConnectionEstablished(TcpSocket &socket)
 
     for (auto& del: _toDelete)
     {
-        _connectionEstablishedListeners.erase(del);
+        callbackMap.erase(del);
     }
 }
 
@@ -172,10 +172,17 @@ void TcpServer::Broadcast(std::string s)
     Broadcast(s.c_str(), s.length());
 }
 
-TcpServer::ListenerHandle TcpServer::AddConnectionEstablishedListener(TcpServer::ConnectionEstablishedCallback listener)
+TcpServer::ListenerHandle TcpServer::AddConnectionEstablishedListener(TcpServer::ConnectionCallback listener)
 {
     ListenerHandle result = MakeListenerHandle();
     _connectionEstablishedListeners[result] = listener;
+    return result;
+}
+
+TcpServer::ListenerHandle TcpServer::AddConnectionClosedListener(TcpServer::ConnectionCallback listener)
+{
+    ListenerHandle result = MakeListenerHandle();
+    _connectionClosedListeners[result] = listener;
     return result;
 }
 
@@ -189,6 +196,7 @@ TcpServer::ListenerHandle TcpServer::AddDataReceivedListener(TcpServer::DataRece
 void TcpServer::RemoveListener(TcpServer::ListenerHandle listenerHandle)
 {
     _connectionEstablishedListeners.erase(listenerHandle);
+    _connectionClosedListeners.equal_range(listenerHandle);
     _dataReceivedListeners.erase(listenerHandle);
 }
 

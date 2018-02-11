@@ -14,6 +14,14 @@ int main()
         }
     );
 
+    server.AddConnectionClosedListener(
+        [](TcpSocket& socket)
+        {
+            std::cerr << "connection to " << socket.GetPeer() << " closed." << std::endl;
+            return true;
+        }
+    );
+
     server.AddDataReceivedListener(
         [&server](TcpSocket& socket, const void* data, size_t count)
         {
