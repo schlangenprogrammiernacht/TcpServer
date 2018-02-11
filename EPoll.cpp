@@ -4,11 +4,12 @@
 
 EPoll::EPoll()
 {
+    _eventBuf.resize(DEFAULT_MAX_EVENTS);
 }
 
 EPoll::EPoll(size_t maxEvents)
-    : _maxEvents(maxEvents)
 {
+    _eventBuf.resize(maxEvents);
 }
 
 EPoll::~EPoll()
@@ -70,13 +71,10 @@ int EPoll::Poll(int timeout_ms, std::function<bool (const epoll_event &)> &&call
 {
     if (!AssertCreated())
     {
-        return false;
+        return -1;
     }
 
-    std::vector<epoll_event> events;
-    events.resize(_maxEvents);
-
-    int eventsWaiting = epoll_wait(_fd, events.data(), static_cast<int>(_maxEvents), timeout_ms);
+    int eventsWaiting = epoll_wait(_fd, _eventBuf.data(), static_cast<int>(_eventBuf.size()), timeout_ms);
     if (eventsWaiting  < 0)
     {
         std::cerr << "epoll_wait() failed: " << errno << std::endl;
@@ -88,9 +86,9 @@ int EPoll::Poll(int timeout_ms, std::function<bool (const epoll_event &)> &&call
         return 0;
     }
 
-    for (int i=0; i<eventsWaiting ; i++)
+    for (size_t i=0; i<static_cast<size_t>(eventsWaiting); i++)
     {
-        auto& event = events[static_cast<size_t>(i)];
+        auto& event = _eventBuf[i];
         if (!callback(event))
         {
             DeleteFileDescriptor(event.data.fd);

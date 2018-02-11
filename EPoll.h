@@ -5,9 +5,13 @@
 #include <unistd.h>
 #include <sys/epoll.h>
 #include <functional>
+#include <vector>
 
 class EPoll
 {
+    public:
+        static constexpr const size_t DEFAULT_MAX_EVENTS = 100;
+
     public:
         EPoll();
         EPoll(size_t maxEvents);
@@ -21,7 +25,7 @@ class EPoll
 
     private:
         int _fd = -1;
-        size_t _maxEvents = 20;
+        std::vector<epoll_event> _eventBuf;
 
         bool AssertCreated();
         void Close();

@@ -14,7 +14,6 @@ class TcpServer
 {
     public:
         static const constexpr int LISTEN_BACKLOG = 5;
-        static const constexpr size_t MAX_EPOLL_EVENTS = 20;
         typedef std::function<bool(TcpSocket& socket, const void* data, size_t count)> DataReceivedCallback;
         typedef size_t ListenerHandle;
 
@@ -27,6 +26,7 @@ class TcpServer
         void Broadcast(std::string s);
         ListenerHandle AddDataReceivedListener(DataReceivedCallback listener);
         void RemoveListener(ListenerHandle hnd);
+        EPoll& GetEPoll();
 
     private:
         EPoll _epoll;

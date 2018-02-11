@@ -156,3 +156,7 @@ void TcpServer::RemoveListener(TcpServer::ListenerHandle hnd)
     _dataReceivedListeners.erase(hnd);
 }
 
+EPoll &TcpServer::GetEPoll()
+{
+    return _epoll;
+}
