@@ -7,10 +7,16 @@
 
 TcpServer::TcpServer()
 {
+    SetReceiveBufferSize(DEFAULT_RECEIVE_BUFFER_SIZE);
 }
 
 TcpServer::~TcpServer()
 {
+}
+
+void TcpServer::SetReceiveBufferSize(size_t bufferSize)
+{
+    _receiveBuffer.resize(bufferSize);
 }
 
 bool TcpServer::Listen(uint16_t port)
@@ -87,14 +93,13 @@ void TcpServer::RemoveServerSocket(TcpSocket &socket)
 
 bool TcpServer::ClientSocketEvent(TcpSocket &socket, uint32_t events)
 {
-    uint8_t buf[8192];
-    ssize_t bytes_read = socket.Read(buf, sizeof(buf));
+    ssize_t bytes_read = socket.Read(_receiveBuffer.data(), _receiveBuffer.size());
     if (bytes_read <= 0)
     {
         RemoveClientSocket(socket);
         return false;
     }
-    OnDataReceived(socket, buf, static_cast<size_t>(bytes_read));
+    OnDataReceived(socket, _receiveBuffer.data(), static_cast<size_t>(bytes_read));
     return true;
 }
 
