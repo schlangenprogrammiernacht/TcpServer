@@ -5,9 +5,9 @@ int main()
     TcpServer server;
 
     auto listenerHandle = server.AddDataReceivedListener(
-        [&server](std::shared_ptr<TcpSocket> socket, const void* data, size_t count)
+        [&server](TcpSocket& socket, const void* data, size_t count)
         {
-            socket->Write("Ok\n");
+            socket.Write("Ok\n");
             server.Broadcast(data, count);
             return true;
         }

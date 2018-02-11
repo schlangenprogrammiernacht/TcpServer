@@ -6,7 +6,7 @@ set (CMAKE_CXX_STANDARD 14)
 add_executable(
     ${PROJECT_NAME}
     main.cpp
-    EPoll.cpp
-    TcpSocket.cpp
-    TcpServer.cpp
+    EPoll.h EPoll.cpp
+    TcpSocket.h TcpSocket.cpp
+    TcpServer.h TcpServer.cpp
 )

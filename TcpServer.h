@@ -15,7 +15,7 @@ class TcpServer
     public:
         static const constexpr int LISTEN_BACKLOG = 5;
         static const constexpr size_t MAX_EPOLL_EVENTS = 20;
-        typedef std::function<bool(std::shared_ptr<TcpSocket> socket, const void* data, size_t count)> DataReceivedCallback;
+        typedef std::function<bool(TcpSocket& socket, const void* data, size_t count)> DataReceivedCallback;
         typedef size_t ListenerHandle;
 
     public:
@@ -30,16 +30,16 @@ class TcpServer
 
     private:
         EPoll _epoll;
-        std::map<int, std::shared_ptr<TcpSocket>> _serverSockets;
-        std::map<int, std::shared_ptr<TcpSocket>> _clientSockets;
+        std::map<int, TcpSocket> _serverSockets;
+        std::map<int, TcpSocket> _clientSockets;
         std::map<ListenerHandle, DataReceivedCallback> _dataReceivedListeners;
         ListenerHandle _nextListenerHandle = 0;
 
         bool EpollEvent(const epoll_event& ev);
-        bool ServerSocketEvent(std::shared_ptr<TcpSocket>& socket, uint32_t events);
-        void RemoveServerSocket(std::shared_ptr<TcpSocket>& socket);
-        bool ClientSocketEvent(std::shared_ptr<TcpSocket>& socket, uint32_t events);
-        void RemoveClientSocket(std::shared_ptr<TcpSocket>& socket);
-        void OnDataReceived(std::shared_ptr<TcpSocket>& socket, const void* data, size_t count);
+        bool ServerSocketEvent(TcpSocket& socket, uint32_t events);
+        void RemoveServerSocket(TcpSocket& socket);
+        bool ClientSocketEvent(TcpSocket& socket, uint32_t events);
+        void RemoveClientSocket(TcpSocket& socket);
+        void OnDataReceived(TcpSocket& socket, const void* data, size_t count);
 
 };

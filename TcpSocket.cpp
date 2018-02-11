@@ -9,12 +9,6 @@ TcpSocket::TcpSocket()
 {
 }
 
-TcpSocket::TcpSocket(TcpSocket &&other)
-    : _fd(other._fd)
-{
-    other._fd = -1;
-}
-
 TcpSocket::TcpSocket(int fd)
     : _fd(fd)
 {
@@ -22,10 +16,6 @@ TcpSocket::TcpSocket(int fd)
 
 TcpSocket::~TcpSocket()
 {
-    if (_fd>=0)
-    {
-        close(_fd);
-    }
 }
 
 int TcpSocket::GetFileDescriptor() const
@@ -87,6 +77,16 @@ int TcpSocket::Accept()
         std::cerr << "accept() failed: " << errno << std::endl;
     }
     return sock;
+}
+
+bool TcpSocket::Close()
+{
+    if (_fd>=0)
+    {
+        close(_fd);
+        _fd = -1;
+    }
+    return true;
 }
 
 ssize_t TcpSocket::Read(void *buf, size_t count)

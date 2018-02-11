@@ -7,8 +7,6 @@ class TcpSocket
 {
     public:
         TcpSocket();
-        TcpSocket(const TcpSocket& other) = delete;
-        TcpSocket(TcpSocket&& other);
         TcpSocket(int fd);
         ~TcpSocket();
 
@@ -18,6 +16,7 @@ class TcpSocket
         bool Bind(uint16_t port);
         bool Listen(int backlog);
         int Accept();
+        bool Close();
         ssize_t Read(void* buf, size_t count);
         ssize_t Write(const void* buf, size_t count);
         ssize_t Write(const std::string data);
