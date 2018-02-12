@@ -37,6 +37,7 @@ bool Game::OnConnectionEstablished(TcpSocket &socket)
     socket.SetUserData(snake.get());
     _snakes[id] = std::move(snake);
     std::cerr << "connection established to " << socket.GetPeer() << std::endl;
+    SendFullSnake(socket, *_snakes[id]);
     return true;
 }
 
@@ -66,6 +67,13 @@ bool Game::OnDataAvailable(TcpSocket &socket)
         snake->SetHeading(heading);
     }
     return true;
+}
+
+void Game::SendFullSnake(TcpSocket &socket, Snake &snake)
+{
+    msgpack::sbuffer sbuf;
+    msgpack::pack(sbuf, snake);
+    socket.Write(sbuf.data(), sbuf.size());
 }
 
 int Game::Main()
