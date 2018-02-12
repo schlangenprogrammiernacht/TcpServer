@@ -32,9 +32,10 @@ Game::Game()
 
 bool Game::OnConnectionEstablished(TcpSocket &socket)
 {
-    auto snake = std::make_unique<Snake>(Vector2d {500,400}, 0, 50);
+    auto id = _nextSnakeId++;
+    auto snake = std::make_unique<Snake>(id, Vector2d {500,400}, 0, 50);
     socket.SetUserData(snake.get());
-    _snakes.push_back(std::move(snake));
+    _snakes[id] = std::move(snake);
     std::cerr << "connection established to " << socket.GetPeer() << std::endl;
     return true;
 }
@@ -44,13 +45,7 @@ bool Game::OnConnectionClosed(TcpSocket &socket)
     std::cerr << "connection to " << socket.GetPeer() << " closed." << std::endl;
 
     auto snake = static_cast<Snake*>(socket.GetUserData());
-    for (auto it=_snakes.begin(); it!=_snakes.end(); ++it)
-    {
-        if (it->get() == snake)
-        {
-            _snakes.erase(it);
-        }
-    }
+    _snakes.erase(snake->Id);
 
     return true;
 }
@@ -66,8 +61,6 @@ bool Game::OnDataAvailable(TcpSocket &socket)
         msgpack::object obj = oh.get();
         double heading;
         obj.convert(heading);
-
-        std::cout << "Heading: " << heading << std::endl;
 
         auto snake = static_cast<Snake*>(socket.GetUserData());
         snake->SetHeading(heading);
@@ -86,15 +79,14 @@ int Game::Main()
     {
         if (server.Poll(1000/60) == 0)
         {
-            for (auto& snake: _snakes)
+            for (auto& kvp: _snakes)
             {
-                snake->MakeStep();
+                kvp.second->MakeStep();
             }
 
             msgpack::sbuffer sbuf;
             msgpack::pack(sbuf, _snakes);
             server.Broadcast(sbuf.data(), sbuf.size());
-            //std::cout << sbuf.size() << std::endl;
         }
     }
 }

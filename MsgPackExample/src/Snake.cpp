@@ -1,8 +1,9 @@
 #include "Snake.h"
 #include <cmath>
 
-Snake::Snake(Vector2d p, double heading, unsigned length)
-    : Heading(heading)
+Snake::Snake(uint32_t id, Vector2d p, double heading, unsigned length)
+    : Id(id)
+    , Heading(heading)
 {
     SetHeading(-heading);
     for (unsigned i=0; i<length; i++)

@@ -9,15 +9,34 @@ struct Vector2d
     MSGPACK_DEFINE(X, Y)
 };
 
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+namespace adaptor {
+
+template <> struct pack<Vector2d>
+{
+    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Vector2d const& v) const
+    {
+        o.pack_map(2);
+        o.pack("x");
+        o.pack(v.X);
+        o.pack("y");
+        o.pack(v.Y);
+        return o;
+    }
+};
+} // namespace adaptor
+} // MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS)
+} // namespace msgpack
+
 class Snake
 {
     public:
+        uint32_t Id = 0;
         double Heading = 0;
         double Speed = 5;
         std::vector<Vector2d> Segments;
-        MSGPACK_DEFINE(Heading, Speed, Segments)
-
-        Snake(Vector2d p, double heading, unsigned length);
+        Snake(uint32_t id, Vector2d p, double heading, unsigned length);
         void SetHeading(double heading);
         void MakeStep();
 
@@ -26,3 +45,28 @@ class Snake
         double _stepY = 0;
 
 };
+
+
+namespace msgpack {
+MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS) {
+namespace adaptor {
+
+template <> struct pack<Snake>
+{
+    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, Snake const& v) const
+    {
+        o.pack_map(4);
+        o.pack("id");
+        o.pack(v.Id);
+        o.pack("h");
+        o.pack(v.Heading);
+        o.pack("s");
+        o.pack(v.Speed);
+        o.pack("segments");
+        o.pack(v.Segments);
+        return o;
+    }
+};
+} // namespace adaptor
+} // MSGPACK_API_VERSION_NAMESPACE(MSGPACK_DEFAULT_API_NS)
+} // namespace msgpack

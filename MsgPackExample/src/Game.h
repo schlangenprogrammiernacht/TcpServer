@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vector>
+#include <map>
 #include <memory>
 
 #include <TcpServer/TcpServer.h>
@@ -14,7 +14,8 @@ class Game
 
     private:
         TcpServer server;
-        std::vector<std::unique_ptr<Snake>> _snakes;
+        std::map<uint32_t,std::unique_ptr<Snake>> _snakes;
+        uint32_t _nextSnakeId = 0;
 
         bool OnConnectionEstablished(TcpSocket& socket);
         bool OnConnectionClosed(TcpSocket& socket);
