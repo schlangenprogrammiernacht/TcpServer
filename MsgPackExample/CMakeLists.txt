@@ -6,6 +6,7 @@ add_executable(
     src/main.cpp
     src/Game.h src/Game.cpp
     src/Snake.h src/Snake.cpp
+    src/TcpProtocol.h
 )
 
 target_link_libraries(

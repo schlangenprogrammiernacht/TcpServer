@@ -58,11 +58,11 @@ template <> struct pack<Snake>
         o.pack_map(4);
         o.pack("id");
         o.pack(v.Id);
-        o.pack("h");
+        o.pack("Heading");
         o.pack(v.Heading);
-        o.pack("s");
+        o.pack("Speed");
         o.pack(v.Speed);
-        o.pack("segments");
+        o.pack("Segments");
         o.pack(v.Segments);
         return o;
     }

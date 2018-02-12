@@ -18,8 +18,6 @@ Snake::Snake(uint32_t id, Vector2d p, double heading, unsigned length)
 void Snake::SetHeading(double heading)
 {
     Heading = heading;
-    _stepX = Speed * cos(heading);
-    _stepY = Speed * sin(heading);
 }
 
 void Snake::MakeStep()
