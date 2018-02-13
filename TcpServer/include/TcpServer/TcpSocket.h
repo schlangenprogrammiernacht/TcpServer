@@ -22,7 +22,7 @@ class TcpSocket
         ssize_t Write(const void* buf, size_t count);
         ssize_t Write(const std::string data);
 
-        std::pair<std::string,int> GetPeerNameAndPort();
+        void GetPeerNameAndPort();
         std::string GetPeerName();
         int GetPeerPort();
         std::string GetPeer();
@@ -32,5 +32,8 @@ class TcpSocket
     private:
         int _fd = -1;
         void* _userData = nullptr;
+        std::string _peerName;
+        int _peerPort = -1;
+        bool SetBoolOption(int optionName, bool enable);
 };
 
