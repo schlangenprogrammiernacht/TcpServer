@@ -19,7 +19,7 @@ class TcpSocket
         int Accept();
         bool Close();
         ssize_t Read(void* buf, size_t count);
-        ssize_t Write(const void* buf, size_t count);
+        ssize_t Write(const void* buf, size_t count, bool more);
         ssize_t Write(const std::string data);
 
         void GetPeerNameAndPort();

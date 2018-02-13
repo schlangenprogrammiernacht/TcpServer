@@ -35,7 +35,7 @@ int main()
             }
 
             socket.Write("Ok\n");
-            server.Broadcast(data, static_cast<size_t>(count));
+            server.Broadcast(data, static_cast<size_t>(count), false);
             return true;
         }
     );

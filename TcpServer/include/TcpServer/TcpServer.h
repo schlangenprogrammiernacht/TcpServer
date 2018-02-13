@@ -24,7 +24,7 @@ class TcpServer
 
         bool Listen(uint16_t port);
         int Poll(int timeout_ms);
-        void Broadcast(const void *buf, size_t count);
+        void Broadcast(const void *buf, size_t count, bool more);
         void Broadcast(std::string s);
         ListenerHandle AddConnectionEstablishedListener(ConnectionCallback listener);
         ListenerHandle AddConnectionClosedListener(ConnectionCallback listener);

@@ -102,18 +102,12 @@ void TcpServer::RemoveClientSocket(TcpSocket &socket)
 
 void TcpServer::MakeConnectionCallback(std::map<TcpServer::ListenerHandle, TcpServer::ConnectionCallback> &callbackMap, TcpSocket &socket)
 {
-    std::vector<ListenerHandle> _toDelete;
     for (auto& kvp: callbackMap)
     {
         if (!(kvp.second)(socket))
         {
-            _toDelete.push_back(kvp.first);
+            return;
         }
-    }
-
-    for (auto& del: _toDelete)
-    {
-        callbackMap.erase(del);
     }
 }
 
@@ -122,11 +116,11 @@ TcpServer::ListenerHandle TcpServer::MakeListenerHandle()
     return _nextListenerHandle++;
 }
 
-void TcpServer::Broadcast(const void *buf, size_t count)
+void TcpServer::Broadcast(const void *buf, size_t count, bool more)
 {
     for (auto& kvp: _clientSockets)
     {
-        if (kvp.second.Write(buf, count) != static_cast<ssize_t>(count))
+        if (kvp.second.Write(buf, count, more) != static_cast<ssize_t>(count))
         {
             RemoveClientSocket(kvp.second);
         }
@@ -135,7 +129,7 @@ void TcpServer::Broadcast(const void *buf, size_t count)
 
 void TcpServer::Broadcast(std::string s)
 {
-    Broadcast(s.c_str(), s.length());
+    Broadcast(s.c_str(), s.length(), false);
 }
 
 TcpServer::ListenerHandle TcpServer::AddConnectionEstablishedListener(TcpServer::ConnectionCallback listener)

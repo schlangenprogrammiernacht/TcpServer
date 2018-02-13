@@ -85,28 +85,26 @@ int Game::Main()
 
     while (true)
     {
-        if (server.Poll(1000/60) == 0)
+        server.Poll(1000/60);
+        TcpProtocol::StepData stepMsg;
+        for (auto& kvp: _snakes)
         {
-            TcpProtocol::StepData stepMsg;
-            for (auto& kvp: _snakes)
-            {
-                kvp.second->MakeStep();
+            kvp.second->MakeStep();
 
-                stepMsg.Data.push_back(
-                    TcpProtocol::StepData::SnakeStep {
-                        kvp.first,
-                        kvp.second->Heading,
-                        kvp.second->Speed
-                    }
-                );
-            }
+            stepMsg.Data.push_back(
+                TcpProtocol::StepData::SnakeStep {
+                    kvp.first,
+                    kvp.second->Heading,
+                    kvp.second->Speed
+                }
+            );
+        }
 
-            if (stepMsg.Data.size()>0)
-            {
-                msgpack::sbuffer sbuf;
-                msgpack::pack(sbuf, stepMsg);
-                BroadcastMessage(sbuf);
-            }
+        if (stepMsg.Data.size()>0)
+        {
+            msgpack::sbuffer sbuf;
+            msgpack::pack(sbuf, stepMsg);
+            BroadcastMessage(sbuf);
         }
     }
 }
@@ -115,9 +113,15 @@ void Game::SendMessage(TcpSocket &socket, msgpack::sbuffer& buf)
 {
     if (buf.size() > 0)
     {
+        auto mod = buf.size() % 4;
+        if (mod>0)
+        {
+            buf.write("\x00\x00\x00\x00", mod);
+        }
+
         uint32_t size = htonl(static_cast<uint32_t>(buf.size()));
-        socket.Write(&size, sizeof(size));
-        socket.Write(buf.data(), buf.size());
+        socket.Write(&size, sizeof(size), true);
+        socket.Write(buf.data(), buf.size(), false);
     }
 }
 
@@ -125,9 +129,15 @@ void Game::BroadcastMessage(msgpack::sbuffer& buf)
 {
     if (buf.size() > 0)
     {
+        auto mod = buf.size() % 4;
+        if (mod>0)
+        {
+            buf.write("\x00\x00\x00\x00", mod);
+        }
+
         uint32_t size = htonl(static_cast<uint32_t>(buf.size()));
-        server.Broadcast(&size, sizeof(size));
-        server.Broadcast(buf.data(), buf.size());
+        server.Broadcast(&size, sizeof(size), true);
+        server.Broadcast(buf.data(), buf.size(), false);
     }
 }
 

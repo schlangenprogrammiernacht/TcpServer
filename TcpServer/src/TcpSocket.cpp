@@ -111,15 +111,20 @@ ssize_t TcpSocket::Read(void *buf, size_t count)
     return retval;
 }
 
-ssize_t TcpSocket::Write(const void *buf, size_t count)
+ssize_t TcpSocket::Write(const void *buf, size_t count, bool more)
 {
-    auto retval = send(_fd, buf, count, MSG_NOSIGNAL);
+    int flags = MSG_NOSIGNAL;
+    if (more)
+    {
+        flags |= MSG_MORE;
+    }
+    auto retval = send(_fd, buf, count, flags);
     return retval;
 }
 
 ssize_t TcpSocket::Write(const std::string data)
 {
-    return Write(data.c_str(), data.length());
+    return Write(data.c_str(), data.length(), false);
 }
 
 void TcpSocket::GetPeerNameAndPort()
