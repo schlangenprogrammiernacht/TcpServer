@@ -23,4 +23,6 @@ class Game
 
         void SendMessage(TcpSocket& socket, msgpack::sbuffer& buf);
         void BroadcastMessage(msgpack::sbuffer& buf);
+
+        void BroadcastFullWorld();
 };

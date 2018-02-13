@@ -15,7 +15,7 @@ namespace TcpProtocol
 
     struct FullWorldData
     {
-        std::map<uint32_t,std::unique_ptr<Snake>>& Snakes;
+        std::map<uint32_t,Snake*> Snakes;
     };
 
     struct StepData
@@ -58,7 +58,12 @@ template <> struct pack<TcpProtocol::FullWorldData>
         o.pack("t");
         o.pack("full");
         o.pack("Snakes");
-        o.pack(v.Snakes);
+        o.pack_map(v.Snakes.size());
+        for (auto& kvp: v.Snakes)
+        {
+            o.pack(kvp.first);
+            o.pack(*kvp.second);
+        }
         return o;
     }
 };

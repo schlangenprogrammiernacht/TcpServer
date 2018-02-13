@@ -44,11 +44,7 @@ bool Game::OnConnectionEstablished(TcpSocket &socket)
     msgpack::pack(initMsgBuf, initMsg);
     SendMessage(socket, initMsgBuf);
 
-    TcpProtocol::FullWorldData fullWorldMsg{ _snakes };
-    msgpack::sbuffer sbuf;
-    msgpack::pack(sbuf, fullWorldMsg);
-    BroadcastMessage(sbuf);
-
+    BroadcastFullWorld();
     return true;
 }
 
@@ -58,6 +54,7 @@ bool Game::OnConnectionClosed(TcpSocket &socket)
 
     auto snake = static_cast<Snake*>(socket.GetUserData());
     _snakes.erase(snake->Id);
+    BroadcastFullWorld();
 
     return true;
 }
@@ -132,4 +129,16 @@ void Game::BroadcastMessage(msgpack::sbuffer& buf)
         server.Broadcast(&size, sizeof(size));
         server.Broadcast(buf.data(), buf.size());
     }
+}
+
+void Game::BroadcastFullWorld()
+{
+    TcpProtocol::FullWorldData fullWorldMsg;
+    for (auto& kvp: _snakes)
+    {
+        fullWorldMsg.Snakes[kvp.first] = kvp.second.get();
+    }
+    msgpack::sbuffer sbuf;
+    msgpack::pack(sbuf, fullWorldMsg);
+    BroadcastMessage(sbuf);
 }

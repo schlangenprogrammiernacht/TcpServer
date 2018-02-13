@@ -93,10 +93,10 @@ void TcpServer::RemoveClientSocket(TcpSocket &socket)
     auto it = _clientSockets.find(fd);
     if (it != _clientSockets.end())
     {
-        MakeConnectionCallback(_connectionClosedListeners, socket);
         socket.Close();
         _epoll.DeleteFileDescriptor(fd);
         _clientSockets.erase(it);
+        MakeConnectionCallback(_connectionClosedListeners, socket);
     }
 }
 
