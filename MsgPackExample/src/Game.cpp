@@ -40,11 +40,14 @@ bool Game::OnConnectionEstablished(TcpSocket &socket)
     std::cerr << "connection established to " << socket.GetPeer() << std::endl;
 
     TcpProtocol::InitMessage initMsg { _snakes[id]->Id, _snakes[id]->Heading };
-    TcpProtocol::FullWorldData fullWorldMsg{ _snakes };
+    msgpack::sbuffer initMsgBuf;
+    msgpack::pack(initMsgBuf, initMsg);
+    SendMessage(socket, initMsgBuf);
 
+    TcpProtocol::FullWorldData fullWorldMsg{ _snakes };
     msgpack::sbuffer sbuf;
     msgpack::pack(sbuf, fullWorldMsg);
-    server.Broadcast(sbuf.data(), sbuf.size());
+    BroadcastMessage(sbuf);
 
     return true;
 }
@@ -105,8 +108,28 @@ int Game::Main()
             {
                 msgpack::sbuffer sbuf;
                 msgpack::pack(sbuf, stepMsg);
-                server.Broadcast(sbuf.data(), sbuf.size());
+                BroadcastMessage(sbuf);
             }
         }
+    }
+}
+
+void Game::SendMessage(TcpSocket &socket, msgpack::sbuffer& buf)
+{
+    if (buf.size() > 0)
+    {
+        uint32_t size = htonl(static_cast<uint32_t>(buf.size()));
+        socket.Write(&size, sizeof(size));
+        socket.Write(buf.data(), buf.size());
+    }
+}
+
+void Game::BroadcastMessage(msgpack::sbuffer& buf)
+{
+    if (buf.size() > 0)
+    {
+        uint32_t size = htonl(static_cast<uint32_t>(buf.size()));
+        server.Broadcast(&size, sizeof(size));
+        server.Broadcast(buf.data(), buf.size());
     }
 }

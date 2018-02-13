@@ -20,4 +20,7 @@ class Game
         bool OnConnectionEstablished(TcpSocket& socket);
         bool OnConnectionClosed(TcpSocket& socket);
         bool OnDataAvailable(TcpSocket& socket);
+
+        void SendMessage(TcpSocket& socket, msgpack::sbuffer& buf);
+        void BroadcastMessage(msgpack::sbuffer& buf);
 };
