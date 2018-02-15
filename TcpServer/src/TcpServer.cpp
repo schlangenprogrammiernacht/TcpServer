@@ -55,7 +55,7 @@ bool TcpServer::ServerSocketEvent(TcpSocket &socket, uint32_t events)
     }
 
     TcpSocket clientSocket(sock);
-    if (!_epoll.AddFileDescriptor(clientSocket.GetFileDescriptor(), EPOLLIN))
+    if (!_epoll.AddFileDescriptor(clientSocket.GetFileDescriptor(), EPOLLIN|EPOLLRDHUP|EPOLLHUP))
     {
         return false;
     }
@@ -80,7 +80,12 @@ void TcpServer::RemoveServerSocket(TcpSocket &socket)
 
 bool TcpServer::ClientSocketEvent(TcpSocket &socket, uint32_t events)
 {
-    if (events & EPOLLIN)
+    if (events & (EPOLLERR|EPOLLRDHUP|EPOLLHUP))
+    {
+        RemoveClientSocket(socket);
+        return true;
+    }
+    else if (events & EPOLLIN)
     {
         MakeConnectionCallback(_dataAvailableListeners, socket);
     }
@@ -122,7 +127,7 @@ void TcpServer::Broadcast(const void *buf, size_t count, bool more)
     {
         if (kvp.second.Write(buf, count, more) != static_cast<ssize_t>(count))
         {
-            RemoveClientSocket(kvp.second);
+            kvp.second.Close();
         }
     }
 }
