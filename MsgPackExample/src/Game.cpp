@@ -78,7 +78,7 @@ bool Game::OnDataAvailable(TcpSocket &socket)
 
 int Game::Main()
 {
-    if (!server.Listen(9001))
+    if (!server.Listen(9010))
     {
         return -1;
     }
