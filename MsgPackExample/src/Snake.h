@@ -37,6 +37,7 @@ class Snake
         double Speed = 3.5;
         std::vector<Vector2d> Segments;
         Snake(uint32_t id, Vector2d p, double heading, unsigned length);
+        Snake(const Snake& other) = delete;
         void SetHeading(double heading);
         void MakeStep();
 
