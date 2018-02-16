@@ -2,6 +2,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/timerfd.h>
 #include <algorithm>
 #include <iostream>
 
@@ -40,6 +41,22 @@ bool TcpServer::EpollEvent(const epoll_event &ev)
     if (client_it != _clientSockets.end())
     {
         return ClientSocketEvent(client_it->second, ev.events);
+    }
+
+    for (auto timerFd: _timerHandles)
+    {
+        if (ev.data.fd == timerFd)
+        {
+            uint64_t expirationCount = 0;
+            if (read(timerFd, &expirationCount, sizeof(expirationCount)) < 0)
+            {
+                perror("timerfd read");
+                close(timerFd);
+                return false;
+            }
+            TimerEvent(timerFd, expirationCount);
+            return true;
+        }
     }
 
     return true;
@@ -90,6 +107,17 @@ bool TcpServer::ClientSocketEvent(TcpSocket &socket, uint32_t events)
         MakeConnectionCallback(_dataAvailableListeners, socket);
     }
     return true;
+}
+
+void TcpServer::TimerEvent(int timerId, uint64_t expirationCount)
+{
+    for (auto& kvp: _timerListeners)
+    {
+        if (!(kvp.second)(timerId, expirationCount))
+        {
+            return;
+        }
+    }
 }
 
 void TcpServer::RemoveClientSocket(TcpSocket &socket)
@@ -158,14 +186,54 @@ TcpServer::ListenerHandle TcpServer::AddDataAvailableListener(TcpServer::Connect
     return result;
 }
 
+TcpServer::ListenerHandle TcpServer::AddTimerListener(TcpServer::TimerCallback listener)
+{
+    ListenerHandle result = MakeListenerHandle();
+    _timerListeners[result] = listener;
+    return result;
+}
+
 void TcpServer::RemoveListener(TcpServer::ListenerHandle listenerHandle)
 {
     _connectionEstablishedListeners.erase(listenerHandle);
     _connectionClosedListeners.equal_range(listenerHandle);
     _dataAvailableListeners.erase(listenerHandle);
+    _timerListeners.erase(listenerHandle);
 }
 
 EPoll &TcpServer::GetEPoll()
 {
     return _epoll;
+}
+
+int TcpServer::AddIntervalTimer(uint64_t interval_us)
+{
+    int timerFd = timerfd_create(CLOCK_MONOTONIC, 0);
+    if (timerFd < 0)
+    {
+        perror("timerfd_create()");
+        return -1;
+    }
+
+    struct itimerspec ts;
+    ts.it_interval.tv_sec = interval_us / 1000000;
+    ts.it_interval.tv_nsec = 1000 * (interval_us % 1000000);
+    ts.it_value.tv_sec = ts.it_interval.tv_sec;
+    ts.it_value.tv_nsec = ts.it_interval.tv_nsec;
+
+
+    if (timerfd_settime(timerFd, 0, &ts, nullptr) < 0)
+    {
+        perror("timerfd_settime()");
+        close(timerFd);
+        return -1;
+    }
+
+    if (!_epoll.AddFileDescriptor(timerFd, EPOLLIN))
+    {
+        return -1;
+    }
+
+    _timerHandles.push_back(timerFd);
+    return timerFd;
 }

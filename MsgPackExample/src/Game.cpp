@@ -29,6 +29,17 @@ Game::Game()
             return OnDataAvailable(socket);
         }
     );
+
+    server.AddTimerListener(
+        [this](int, uint64_t expirationCount)
+        {
+            for (uint64_t i=0; i<expirationCount; i++)
+            {
+                OnTimerInterval();
+            }
+            return true;
+        }
+    );
 }
 
 bool Game::OnConnectionEstablished(TcpSocket &socket)
@@ -76,6 +87,32 @@ bool Game::OnDataAvailable(TcpSocket &socket)
     return true;
 }
 
+bool Game::OnTimerInterval()
+{
+    TcpProtocol::StepData stepMsg;
+    for (auto& kvp: _snakes)
+    {
+        kvp.second->MakeStep();
+
+        stepMsg.Data.push_back(
+            TcpProtocol::StepData::SnakeStep {
+                kvp.first,
+                kvp.second->Heading,
+                kvp.second->Speed
+            }
+        );
+    }
+
+    if (stepMsg.Data.size()>0)
+    {
+        msgpack::sbuffer sbuf;
+        msgpack::pack(sbuf, stepMsg);
+        BroadcastMessage(sbuf);
+    }
+
+    return true;
+}
+
 int Game::Main()
 {
     if (!server.Listen(9010))
@@ -83,29 +120,11 @@ int Game::Main()
         return -1;
     }
 
+    server.AddIntervalTimer(16666);
+
     while (true)
     {
-        server.Poll(1000/60);
-        TcpProtocol::StepData stepMsg;
-        for (auto& kvp: _snakes)
-        {
-            kvp.second->MakeStep();
-
-            stepMsg.Data.push_back(
-                TcpProtocol::StepData::SnakeStep {
-                    kvp.first,
-                    kvp.second->Heading,
-                    kvp.second->Speed
-                }
-            );
-        }
-
-        if (stepMsg.Data.size()>0)
-        {
-            msgpack::sbuffer sbuf;
-            msgpack::pack(sbuf, stepMsg);
-            BroadcastMessage(sbuf);
-        }
+        server.Poll(1000);
     }
 }
 

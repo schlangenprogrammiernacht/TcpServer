@@ -34,7 +34,7 @@ class Snake
     public:
         uint32_t Id = 0;
         double Heading = 0;
-        double Speed = 3.5;
+        double Speed = 5.0;
         std::vector<Vector2d> Segments;
         Snake(uint32_t id, Vector2d p, double heading, unsigned length);
         Snake(const Snake& other) = delete;

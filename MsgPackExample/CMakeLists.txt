@@ -11,4 +11,7 @@ add_executable(
 target_link_libraries(
     MsgPackExample
     tcpserver
+    -static-libgcc -static-libstdc++
 )
+
+set(CMAKE_EXE_LINKER_FLAGS " -static")
