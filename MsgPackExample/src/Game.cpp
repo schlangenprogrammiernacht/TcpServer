@@ -34,7 +34,7 @@ Game::Game()
 bool Game::OnConnectionEstablished(TcpSocket &socket)
 {
     auto id = _nextSnakeId++;
-    auto snake = std::make_unique<Snake>(id, Vector2d {500,400}, 0, 75);
+    auto snake = std::make_unique<Snake>(id, Vector2d {0,0}, 0, 150);
     socket.SetUserData(snake.get());
     _snakes[id] = std::move(snake);
     std::cerr << "connection established to " << socket.GetPeer() << std::endl;
