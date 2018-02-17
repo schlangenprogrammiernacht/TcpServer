@@ -7,11 +7,20 @@
 
 namespace TcpProtocol
 {
-    struct Message
+    enum
     {
-        uint8_t protocol_version;
-        uint8_t message_type;
+        MESSAGE_TYPE_GAME_INFO = 0,
+        MESSAGE_TYPE_TICK = 1,
+        MESSAGE_TYPE_PLAYER_INFO = 2,
+        MESSAGE_TYPE_WORLD_UPDATE = 3,
+        MESSAGE_TYPE_BOT_SPAWN = 4,
+        MESSAGE_TYPE_BOT_KILLED = 5,
+        MESSAGE_TYPE_FOOD_SPAWN = 6,
+        MESSAGE_TYPE_FOOD_CONSUMED = 7,
+        MESSAGE_TYPE_BOT_MOVED = 8
     };
+
+    static constexpr const uint8_t PROTOCOL_VERSION = 0;
 
     struct SnakeSegment
     {
@@ -38,39 +47,51 @@ namespace TcpProtocol
         double   value;
     };
 
-    struct GameInfoMessage : public Message
+    struct GameInfoMessage
     {
-        double world_size_x;
-        double world_size_y;
-        double food_decay_per_frame;
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_GAME_INFO;
+        double world_size_x = 0;
+        double world_size_y = 0;
+        double food_decay_per_frame = 0;
     };
 
-    struct TickMessage : public Message
+    struct TickMessage
     {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_TICK;
         uint64_t frame_id; // frame counter since start of server
     };
 
-    struct WorldUpdateMessage : public Message
+    struct WorldUpdateMessage
     {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_WORLD_UPDATE;
         std::vector<Bot> bots;
         std::vector<Food> food;
     };
 
-    struct BotSpawnMessage : public Message
+    struct BotSpawnMessage
     {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_BOT_SPAWN;
         Bot new_bot;
     };
 
     // kill
-    struct BotKilledMessage : public Message
+    struct BotKilledMessage
     {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_BOT_KILLED;
         uint64_t killer_id;
         uint64_t victim_id; // victim is deleted in this frame
     };
 
     // food produce
-    struct FoodSpawnMessage : public Message
+    struct FoodSpawnMessage
     {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_FOOD_SPAWN;
         std::vector<Food> new_food;
     };
 
@@ -81,11 +102,12 @@ namespace TcpProtocol
         uint64_t bot_id; // bot consuming the food
     };
 
-    struct FoodConsumedMessage : public Message
+    struct FoodConsumedMessage
     {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_FOOD_CONSUMED;
         std::vector<FoodConsumedItem> items;
     };
-
 
     // move
     struct BotMoveItem
@@ -96,8 +118,10 @@ namespace TcpProtocol
         uint32_t current_segment_radius;
     };
 
-    struct BotMovedMessage : public Message
+    struct BotMovedMessage
     {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_BOT_MOVED;
         std::vector<BotMoveItem> items;
     };
 
