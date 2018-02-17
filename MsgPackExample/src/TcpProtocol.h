@@ -56,6 +56,13 @@ namespace TcpProtocol
         double food_decay_per_frame = 0;
     };
 
+    struct PlayerInfoMessage
+    {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_PLAYER_INFO;
+        uint64_t player_id; // id der von dieser Verbindung gesteuerten Schlange
+    };
+
     struct TickMessage
     {
         static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
@@ -141,6 +148,18 @@ template <> struct pack<TcpProtocol::GameInfoMessage>
         o.pack(v.world_size_x);
         o.pack(v.world_size_y);
         o.pack(v.food_decay_per_frame);
+        return o;
+    }
+};
+
+template <> struct pack<TcpProtocol::PlayerInfoMessage>
+{
+    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::PlayerInfoMessage const& v) const
+    {
+        o.pack_array(3);
+        o.pack(v.protocol_version);
+        o.pack(v.message_type);
+        o.pack(v.player_id);
         return o;
     }
 };

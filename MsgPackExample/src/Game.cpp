@@ -50,12 +50,27 @@ bool Game::OnConnectionEstablished(TcpSocket &socket)
     _snakes[id] = std::move(snake);
     std::cerr << "connection established to " << socket.GetPeer() << std::endl;
 
-    TcpProtocol::InitMessage initMsg { _snakes[id]->Id, _snakes[id]->Heading };
-    msgpack::sbuffer initMsgBuf;
-    msgpack::pack(initMsgBuf, initMsg);
-    SendMessage(socket, initMsgBuf);
+    TcpProtocol::GameInfoMessage gameInfo;
+    gameInfo.world_size_x = 100000.0;
+    gameInfo.world_size_y = 100000.0;
+    gameInfo.food_decay_per_frame = 0.1;
+    SendObject(socket, gameInfo);
 
-    BroadcastFullWorld();
+    TcpProtocol::PlayerInfoMessage playerInfo { id };
+    SendObject(socket, playerInfo);
+
+    TcpProtocol::BotSpawnMessage botSpawn;
+    botSpawn.new_bot.id = id;
+    botSpawn.new_bot.name = socket.GetPeerName();
+    botSpawn.new_bot.heading = _snakes[id]->Heading;
+    botSpawn.new_bot.segment_radius = 1;
+    for (auto& seg: _snakes[id]->Segments)
+    {
+        botSpawn.new_bot.snake_segments.push_back({ seg.X, seg.Y });
+    }
+    BroadcastObject(botSpawn);
+    SendWorldUpdate(socket);
+
     return true;
 }
 
@@ -63,10 +78,14 @@ bool Game::OnConnectionClosed(TcpSocket &socket)
 {
     std::cerr << "connection to " << socket.GetPeer() << " closed." << std::endl;
 
+    TcpProtocol::BotKilledMessage msg;
     auto snake = static_cast<Snake*>(socket.GetUserData());
+    std::cerr << "snake " << snake->Id << " killed." << std::endl;
+    msg.killer_id = 0;
+    msg.victim_id = snake->Id;
     _snakes.erase(snake->Id);
-    BroadcastFullWorld();
 
+    BroadcastObject(msg);
     return true;
 }
 
@@ -89,25 +108,24 @@ bool Game::OnDataAvailable(TcpSocket &socket)
 
 bool Game::OnTimerInterval()
 {
-    TcpProtocol::StepData stepMsg;
+    TcpProtocol::BotMovedMessage msg;
+
     for (auto& kvp: _snakes)
     {
-        kvp.second->MakeStep();
+        auto &snake = kvp.second;
+        snake->MakeStep();
 
-        stepMsg.Data.push_back(
-            TcpProtocol::StepData::SnakeStep {
-                kvp.first,
-                kvp.second->Heading,
-                kvp.second->Speed
-            }
-        );
+        TcpProtocol::BotMoveItem item;
+        item.bot_id = snake->Id;
+        item.current_length = static_cast<uint32_t>(snake->Segments.size());
+        item.current_segment_radius = 1.0;
+        item.new_segments.push_back(TcpProtocol::SnakeSegment { snake->Segments[0].X, snake->Segments[0].Y });
+        msg.items.push_back(item);
     }
 
-    if (stepMsg.Data.size()>0)
+    if (msg.items.size()>0)
     {
-        msgpack::sbuffer sbuf;
-        msgpack::pack(sbuf, stepMsg);
-        BroadcastMessage(sbuf);
+        BroadcastObject(msg);
     }
 
     return true;
@@ -160,14 +178,21 @@ void Game::BroadcastMessage(msgpack::sbuffer& buf)
     }
 }
 
-void Game::BroadcastFullWorld()
+void Game::SendWorldUpdate(TcpSocket &socket)
 {
-    TcpProtocol::FullWorldData fullWorldMsg;
+    TcpProtocol::WorldUpdateMessage msg;
     for (auto& kvp: _snakes)
     {
-        fullWorldMsg.Snakes[kvp.first] = kvp.second.get();
+        TcpProtocol::Bot bot;
+        bot.id = kvp.first;
+        bot.name = "";
+        bot.heading = kvp.second->Heading;
+        bot.segment_radius = 1;
+        for (auto& seg: kvp.second->Segments)
+        {
+            bot.snake_segments.push_back({ seg.X, seg.Y });
+        }
+        msg.bots.push_back(bot);
     }
-    msgpack::sbuffer sbuf;
-    msgpack::pack(sbuf, fullWorldMsg);
-    BroadcastMessage(sbuf);
+    SendObject(socket, msg);
 }

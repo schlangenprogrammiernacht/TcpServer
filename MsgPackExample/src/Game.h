@@ -21,9 +21,22 @@ class Game
         bool OnConnectionClosed(TcpSocket& socket);
         bool OnDataAvailable(TcpSocket& socket);
         bool OnTimerInterval();
-
         void SendMessage(TcpSocket& socket, msgpack::sbuffer& buf);
         void BroadcastMessage(msgpack::sbuffer& buf);
 
-        void BroadcastFullWorld();
+        template <typename T> void SendObject(TcpSocket& socket, const T& obj)
+        {
+            msgpack::sbuffer buf;
+            msgpack::pack(buf, obj);
+            SendMessage(socket, buf);
+        }
+
+        template <typename T> void BroadcastObject(const T& obj)
+        {
+            msgpack::sbuffer buf;
+            msgpack::pack(buf, obj);
+            BroadcastMessage(buf);
+        }
+
+        void SendWorldUpdate(TcpSocket& socket);
 };
