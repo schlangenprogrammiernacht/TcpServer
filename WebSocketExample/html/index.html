@@ -1,0 +1,24 @@
+<html>
+  <body>
+
+<script>
+
+window.onload = function()
+{
+    let ws = new WebSocket("ws://localhost:9009/websocket", "binary");
+    ws.binaryType = 'arraybuffer';
+    ws.onmessage = function(event)
+    {
+        console.log(event);
+    };
+
+    window.setInterval(function()
+    {
+        ws.send("Hallo");
+    }, 500);
+};
+
+</script>
+
+  </body>
+</html>
