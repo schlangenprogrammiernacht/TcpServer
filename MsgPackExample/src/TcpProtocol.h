@@ -14,10 +14,11 @@ namespace TcpProtocol
         MESSAGE_TYPE_PLAYER_INFO = 2,
         MESSAGE_TYPE_WORLD_UPDATE = 3,
         MESSAGE_TYPE_BOT_SPAWN = 4,
-        MESSAGE_TYPE_BOT_KILLED = 5,
-        MESSAGE_TYPE_FOOD_SPAWN = 6,
-        MESSAGE_TYPE_FOOD_CONSUMED = 7,
-        MESSAGE_TYPE_BOT_MOVED = 8
+        MESSAGE_TYPE_BOT_MOVED = 5,
+        MESSAGE_TYPE_BOT_KILLED = 6,
+        MESSAGE_TYPE_FOOD_SPAWN = 7,
+        MESSAGE_TYPE_FOOD_CONSUMED = 8,
+        MESSAGE_TYPE_FOOD_DECAYED = 9,
     };
 
     static constexpr const uint8_t PROTOCOL_VERSION = 0;
@@ -32,7 +33,6 @@ namespace TcpProtocol
     {
         uint64_t id;
         std::string name;
-        double heading;
         double segment_radius;
 
         // snake_segments[0] = Head of Snake
@@ -85,38 +85,6 @@ namespace TcpProtocol
         Bot new_bot;
     };
 
-    // kill
-    struct BotKilledMessage
-    {
-        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
-        static constexpr const uint8_t message_type = MESSAGE_TYPE_BOT_KILLED;
-        uint64_t killer_id;
-        uint64_t victim_id; // victim is deleted in this frame
-    };
-
-    // food produce
-    struct FoodSpawnMessage
-    {
-        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
-        static constexpr const uint8_t message_type = MESSAGE_TYPE_FOOD_SPAWN;
-        std::vector<Food> new_food;
-    };
-
-    // food consumed
-    struct FoodConsumedItem
-    {
-        uint64_t food_id; // food is deleted in this frame
-        uint64_t bot_id; // bot consuming the food
-    };
-
-    struct FoodConsumedMessage
-    {
-        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
-        static constexpr const uint8_t message_type = MESSAGE_TYPE_FOOD_CONSUMED;
-        std::vector<FoodConsumedItem> items;
-    };
-
-    // move
     struct BotMoveItem
     {
         uint64_t bot_id;
@@ -130,6 +98,41 @@ namespace TcpProtocol
         static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
         static constexpr const uint8_t message_type = MESSAGE_TYPE_BOT_MOVED;
         std::vector<BotMoveItem> items;
+    };
+
+    struct BotKilledMessage
+    {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_BOT_KILLED;
+        uint64_t killer_id;
+        uint64_t victim_id; // victim is deleted in this frame
+    };
+
+    struct FoodSpawnMessage
+    {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_FOOD_SPAWN;
+        std::vector<Food> new_food;
+    };
+
+    struct FoodConsumedItem
+    {
+        uint64_t food_id; // food is deleted in this frame
+        uint64_t bot_id; // bot consuming the food
+    };
+
+    struct FoodConsumedMessage
+    {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_FOOD_CONSUMED;
+        std::vector<FoodConsumedItem> items;
+    };
+
+    struct FoodDecayedMessage
+    {
+        static constexpr const uint8_t protocol_version = PROTOCOL_VERSION;
+        static constexpr const uint8_t message_type = MESSAGE_TYPE_FOOD_DECAYED;
+        std::vector<uint64_t> food_ids; // food is deleted in this frame
     };
 
 }
@@ -201,6 +204,31 @@ template <> struct pack<TcpProtocol::BotSpawnMessage>
     }
 };
 
+template <> struct pack<TcpProtocol::BotMovedMessage>
+{
+    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::BotMovedMessage const& v) const
+    {
+        o.pack_array(3);
+        o.pack(v.protocol_version);
+        o.pack(v.message_type);
+        o.pack(v.items);
+        return o;
+    }
+};
+
+template <> struct pack<TcpProtocol::BotMoveItem>
+{
+    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::BotMoveItem const& v) const
+    {
+        o.pack_array(4);
+        o.pack(v.bot_id);
+        o.pack(v.new_segments);
+        o.pack(v.current_length);
+        o.pack(v.current_segment_radius);
+        return o;
+    }
+};
+
 template <> struct pack<TcpProtocol::BotKilledMessage>
 {
     template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::BotKilledMessage const& v) const
@@ -249,27 +277,14 @@ template <> struct pack<TcpProtocol::FoodConsumedItem>
     }
 };
 
-template <> struct pack<TcpProtocol::BotMovedMessage>
+template <> struct pack<TcpProtocol::FoodDecayedMessage>
 {
-    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::BotMovedMessage const& v) const
+    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::FoodDecayedMessage const& v) const
     {
         o.pack_array(3);
         o.pack(v.protocol_version);
         o.pack(v.message_type);
-        o.pack(v.items);
-        return o;
-    }
-};
-
-template <> struct pack<TcpProtocol::BotMoveItem>
-{
-    template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::BotMoveItem const& v) const
-    {
-        o.pack_array(4);
-        o.pack(v.bot_id);
-        o.pack(v.new_segments);
-        o.pack(v.current_length);
-        o.pack(v.current_segment_radius);
+        o.pack(v.food_ids);
         return o;
     }
 };
@@ -281,7 +296,6 @@ template <> struct pack<TcpProtocol::Bot>
         o.pack_array(6);
         o.pack(v.id);
         o.pack(v.name);
-        o.pack(v.heading);
         o.pack(v.segment_radius);
         o.pack(v.snake_segments);
         o.pack(v.color);

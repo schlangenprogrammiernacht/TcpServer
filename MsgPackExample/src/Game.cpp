@@ -62,7 +62,6 @@ bool Game::OnConnectionEstablished(TcpSocket &socket)
     TcpProtocol::BotSpawnMessage botSpawn;
     botSpawn.new_bot.id = id;
     botSpawn.new_bot.name = socket.GetPeerName();
-    botSpawn.new_bot.heading = _snakes[id]->Heading;
     botSpawn.new_bot.segment_radius = 1;
     for (auto& seg: _snakes[id]->Segments)
     {
@@ -186,7 +185,6 @@ void Game::SendWorldUpdate(TcpSocket &socket)
         TcpProtocol::Bot bot;
         bot.id = kvp.first;
         bot.name = "";
-        bot.heading = kvp.second->Heading;
         bot.segment_radius = 1;
         for (auto& seg: kvp.second->Segments)
         {
