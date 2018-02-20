@@ -293,7 +293,7 @@ template <> struct pack<TcpProtocol::Bot>
 {
     template <typename Stream> msgpack::packer<Stream>& operator()(msgpack::packer<Stream>& o, TcpProtocol::Bot const& v) const
     {
-        o.pack_array(6);
+        o.pack_array(5);
         o.pack(v.id);
         o.pack(v.name);
         o.pack(v.segment_radius);
