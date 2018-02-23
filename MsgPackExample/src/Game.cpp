@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "TcpProtocol.h"
+#include "MsgpackProtocol.h"
 
 Game::Game()
 {
@@ -50,16 +50,16 @@ bool Game::OnConnectionEstablished(TcpSocket &socket)
     _snakes[id] = std::move(snake);
     std::cerr << "connection established to " << socket.GetPeer() << std::endl;
 
-    TcpProtocol::GameInfoMessage gameInfo;
+    MsgpackProtocol::GameInfoMessage gameInfo;
     gameInfo.world_size_x = 100000.0;
     gameInfo.world_size_y = 100000.0;
     gameInfo.food_decay_per_frame = 0.1;
     SendObject(socket, gameInfo);
 
-    TcpProtocol::PlayerInfoMessage playerInfo { id };
+    MsgpackProtocol::PlayerInfoMessage playerInfo { id };
     SendObject(socket, playerInfo);
 
-    TcpProtocol::BotSpawnMessage botSpawn;
+    MsgpackProtocol::BotSpawnMessage botSpawn;
     botSpawn.new_bot.id = id;
     botSpawn.new_bot.name = socket.GetPeerName();
     botSpawn.new_bot.segment_radius = 1;
@@ -77,7 +77,7 @@ bool Game::OnConnectionClosed(TcpSocket &socket)
 {
     std::cerr << "connection to " << socket.GetPeer() << " closed." << std::endl;
 
-    TcpProtocol::BotKilledMessage msg;
+    MsgpackProtocol::BotKillMessage msg;
     auto snake = static_cast<Snake*>(socket.GetUserData());
     std::cerr << "snake " << snake->Id << " killed." << std::endl;
     msg.killer_id = 0;
@@ -92,7 +92,7 @@ bool Game::OnDataAvailable(TcpSocket &socket)
 {
     char data[1024];
     ssize_t count = socket.Read(data, sizeof(data));
-    if (count > 0)
+    if (count>0)
     {
         msgpack::object_handle oh = msgpack::unpack(data, static_cast<size_t>(count));
         msgpack::object obj = oh.get();
@@ -107,18 +107,18 @@ bool Game::OnDataAvailable(TcpSocket &socket)
 
 bool Game::OnTimerInterval()
 {
-    TcpProtocol::BotMovedMessage msg;
+    MsgpackProtocol::BotMoveMessage msg;
 
     for (auto& kvp: _snakes)
     {
         auto &snake = kvp.second;
         snake->MakeStep();
 
-        TcpProtocol::BotMoveItem item;
+        MsgpackProtocol::BotMoveItem item;
         item.bot_id = snake->Id;
         item.current_length = static_cast<uint32_t>(snake->Segments.size());
         item.current_segment_radius = 1.0;
-        item.new_segments.push_back(TcpProtocol::SnakeSegment { snake->Segments[0].X, snake->Segments[0].Y });
+        item.new_segments.push_back(MsgpackProtocol::SnakeSegment { snake->Segments[0].X, snake->Segments[0].Y });
         msg.items.push_back(item);
     }
 
@@ -149,12 +149,6 @@ void Game::SendMessage(TcpSocket &socket, msgpack::sbuffer& buf)
 {
     if (buf.size() > 0)
     {
-        auto mod = buf.size() % 4;
-        if (mod>0)
-        {
-            buf.write("\x00\x00\x00\x00", mod);
-        }
-
         uint32_t size = htonl(static_cast<uint32_t>(buf.size()));
         socket.Write(&size, sizeof(size), true);
         socket.Write(buf.data(), buf.size(), false);
@@ -165,12 +159,6 @@ void Game::BroadcastMessage(msgpack::sbuffer& buf)
 {
     if (buf.size() > 0)
     {
-        auto mod = buf.size() % 4;
-        if (mod>0)
-        {
-            buf.write("\x00\x00\x00\x00", mod);
-        }
-
         uint32_t size = htonl(static_cast<uint32_t>(buf.size()));
         server.Broadcast(&size, sizeof(size), true);
         server.Broadcast(buf.data(), buf.size(), false);
@@ -179,10 +167,10 @@ void Game::BroadcastMessage(msgpack::sbuffer& buf)
 
 void Game::SendWorldUpdate(TcpSocket &socket)
 {
-    TcpProtocol::WorldUpdateMessage msg;
+    MsgpackProtocol::WorldUpdateMessage msg;
     for (auto& kvp: _snakes)
     {
-        TcpProtocol::Bot bot;
+        MsgpackProtocol::Bot bot;
         bot.id = kvp.first;
         bot.name = "";
         bot.segment_radius = 1;
