@@ -29,11 +29,14 @@ class TcpSocket
         void SetUserData(void* userData);
         void* GetUserData();
 
+        void SetWriteBlocking(bool block);
+
     private:
         int _fd = -1;
         void* _userData = nullptr;
         std::string _peerName;
         int _peerPort = -1;
+        bool _writeIsBlocking = true;
         bool SetBoolOption(int optionName, bool enable);
 };
 

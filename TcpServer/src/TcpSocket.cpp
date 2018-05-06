@@ -118,6 +118,10 @@ ssize_t TcpSocket::Write(const void *buf, size_t count, bool more)
     {
         flags |= MSG_MORE;
     }
+    if (!_writeIsBlocking)
+    {
+        flags |= MSG_DONTWAIT;
+    }
     auto retval = send(_fd, buf, count, flags);
     return retval;
 }
@@ -182,4 +186,9 @@ void TcpSocket::SetUserData(void *userData)
 void *TcpSocket::GetUserData()
 {
     return _userData;
+}
+
+void TcpSocket::SetWriteBlocking(bool block)
+{
+	_writeIsBlocking = block;
 }
