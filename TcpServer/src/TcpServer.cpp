@@ -151,12 +151,19 @@ TcpServer::ListenerHandle TcpServer::MakeListenerHandle()
 
 void TcpServer::Broadcast(const void *buf, size_t count, bool more)
 {
+    std::vector<TcpSocket*> socketsToRemove;
+
     for (auto& kvp: _clientSockets)
     {
         if (kvp.second.Write(buf, count, more) != static_cast<ssize_t>(count))
         {
-            kvp.second.Close();
+            socketsToRemove.push_back(&(kvp.second));
         }
+    }
+
+    for (TcpSocket *socket: socketsToRemove) {
+        std::cerr << "Removing client connection because buffer is full: " << socket->GetPeer() << std::endl;
+        RemoveClientSocket(*socket);
     }
 }
 
