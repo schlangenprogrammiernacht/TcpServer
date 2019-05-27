@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 TcpSocket::TcpSocket()
 {
@@ -64,6 +65,8 @@ bool TcpSocket::SetBoolOption(int optionName, bool enable)
 bool TcpSocket::Bind(uint16_t port)
 {
     struct sockaddr_in6 addr;
+    std::memset(&addr, 0, sizeof(addr));
+
     addr.sin6_family = AF_INET6;
     addr.sin6_port = htons(port);
     addr.sin6_addr = in6addr_any;

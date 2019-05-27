@@ -1,6 +1,7 @@
 #include <TcpServer/EPoll.h>
 #include <vector>
 #include <iostream>
+#include <cstring>
 
 EPoll::EPoll()
 {
@@ -43,6 +44,8 @@ bool EPoll::AddFileDescriptor(int socket, uint32_t events)
     }
 
     epoll_event ev;
+    std::memset(&ev, 0, sizeof(ev));
+
     ev.events = events;
     ev.data.fd = socket;
     if (epoll_ctl(_fd, EPOLL_CTL_ADD, socket, &ev) != 0)
